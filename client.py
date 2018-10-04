@@ -37,6 +37,7 @@ class State:
         self.main_menu = True
         self.player_name = ""
         self.inputting_name = False
+        self.ip = "192.168.1.73"
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -70,7 +71,7 @@ class State:
     def connect_to_server(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ##self.client.connect(("172.16.192.170", 1782))
-        self.client.connect(("192.168.1.73", 1782))
+        self.client.connect((state.ip, 1782))
         thread.start_new_thread(print_data,(self.client,))
         
 class Renderer:
