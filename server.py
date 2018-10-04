@@ -37,9 +37,9 @@ def handle_client(clientsocket, addr, players):
                 print("unpickling error")
 
             try:
-                state.player_data[clientsocket] = [state.player_data[clientsocket][0],player[0],player[1]]
+                state.player_data[clientsocket] = [state.player_data[clientsocket][0],player[0],player[1],player[2]]
             except KeyError:
-                state.player_data[clientsocket] = [pygame.Rect(0,0,20,20),player[0],player[1]]
+                state.player_data[clientsocket] = [pygame.Rect(0,0,20,20),player[0],player[1],player[2]]
             state.player_locations = list(state.player_data.values())
 
         except ConnectionResetError:
@@ -49,7 +49,7 @@ def handle_client(clientsocket, addr, players):
         for player_no in range(len(state.player_locations)):
             state.player_locations[player_no][0].left += state.player_locations[player_no][2][0]
             state.player_locations[player_no][0].top += state.player_locations[player_no][2][1]
-            state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1]]
+            state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3]]
 
         clientsocket.send(pickle.dumps(state.player_locations))
     

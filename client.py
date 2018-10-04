@@ -10,7 +10,7 @@ pygame.font.init()
         
 class State:
     def __init__(self):
-        self.player = [(255,0,0),(0,0)]
+        self.player = [(255,255,0),(0,0),"A Sheep"]
         self.players = []
         self.velocity_x = 0
         self.velocity_y = 0
@@ -18,12 +18,14 @@ class State:
 class Renderer:
     def __init__(self):
         self.screen = pygame.display.set_mode((1000,600))
+        self.font = pygame.font.SysFont("Comic Sans MS", 15)
 
     def render(self):
         self.screen.fill((255,255,255))
 
         for player in state.players:
             pygame.draw.rect(self.screen,player[1],player[0])
+            self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0].left-len(player[2])*2.5,player[0].top-20))
 
 
 renderer = Renderer()
@@ -50,8 +52,9 @@ def input_getter():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
-
+        
         if event.type == pygame.KEYDOWN:
+
             if event.key == pygame.K_d:
                 state.velocity_x += 1
 
