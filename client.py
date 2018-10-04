@@ -55,26 +55,26 @@ def input_getter():
             if event.key == pygame.K_d:
                 state.velocity_x += 1
 
-            elif event.key == pygame.K_a:
+            if event.key == pygame.K_a:
                 state.velocity_x -= 1
 
-            elif event.key == pygame.K_s:
+            if event.key == pygame.K_s:
                 state.velocity_y += 1
 
-            elif event.key == pygame.K_w:
+            if event.key == pygame.K_w:
                 state.velocity_y -= 1
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_d:
                 state.velocity_x -= 1
 
-            elif event.key == pygame.K_a:
+            if event.key == pygame.K_a:
                 state.velocity_x += 1
 
-            elif event.key == pygame.K_s:
+            if event.key == pygame.K_s:
                 state.velocity_y -= 1
 
-            elif event.key == pygame.K_w:
+            if event.key == pygame.K_w:
                 state.velocity_y += 1
 
     state.player[1] = (state.velocity_x,state.velocity_y)
