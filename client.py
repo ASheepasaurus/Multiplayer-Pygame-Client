@@ -37,7 +37,10 @@ class State:
         self.main_menu = True
         self.player_name = ""
         self.inputting_name = False
-        self.ip = "192.168.1.73"
+        self.inputting_ip = False
+        self.selecting_colour = False
+        self.ip = ""
+        self.default_ip = "192.168.1.73"
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -45,14 +48,17 @@ class State:
             if button.main_menu:
                 button.visible = not button.visible
         state.inputting_name = True
-        self.connecting_stage += 1
 
     def next_connection_step(self):
+        self.connecting_stage += 1
         if self.connecting_stage == 1:
             state.inputting_name = False
-            self.main_menu = False
+            state.inputting_ip = True
             self.player = [(255,255,0),(0,0),self.player_name]
-           
+                    
+        if self.connecting_stage == 2:
+            state.inputting_ip = False
+            state.main_menu = False
             for button in self.buttons:
                 if button.main_menu:
                     button.visible = False
@@ -71,8 +77,13 @@ class State:
     def connect_to_server(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ##self.client.connect(("172.16.192.170", 1782))
-        self.client.connect((state.ip, 1782))
-        thread.start_new_thread(print_data,(self.client,))
+        if state.ip.count(".") == 3:            
+            self.client.connect((state.ip, 1782))
+            thread.start_new_thread(print_data,(self.client,))
+
+        else:
+            self.client.connect((state.default_ip, 1782))
+            thread.start_new_thread(print_data,(self.client,))
         
 class Renderer:
     def __init__(self):
@@ -93,6 +104,9 @@ class Renderer:
 
         if state.inputting_name:
             self.screen.blit(self.font.render("Name: " + state.player_name,False,(0,0,0)),(560,200))
+
+        if state.inputting_ip:
+            self.screen.blit(self.font.render("IP: " + state.ip,False,(0,0,0)),(560,200))
 
 
 renderer = Renderer()
@@ -140,6 +154,12 @@ def input_getter():
 ##Checks if the player enters a space
                 elif event.key == 32:
                     state.player_name = state.player_name + " "
+            if state.inputting_ip:
+                if event.key == 8 and len(state.ip) != 0:
+                    state.ip = state.ip[:-1]
+
+                if event.key == 46 or event.key >= 48 and event.key <= 57:
+                    state.ip = state.ip + pygame.key.name(event.key)
                 
             if not state.main_menu:
                 if event.key == pygame.K_d:
