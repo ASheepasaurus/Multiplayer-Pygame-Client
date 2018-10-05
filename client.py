@@ -69,7 +69,7 @@ class State:
         self.inputting_ip = False
         self.selecting_colour = False
         self.ip = ""
-        self.default_ip = "192.168.1.73"
+        self.default_ip = "172.16.192.170"
         self.colour = (0,0,0)
         self.slider_selected = -1
         self.total_colour_rect = pygame.Rect(640,150,20,20)
@@ -140,9 +140,9 @@ class Renderer:
 
         if not state.main_menu:
             for player in state.players:
-                pygame.draw.rect(self.screen,player[1],player[0])
-                pygame.draw.rect(self.screen,(0,0,0),player[0],1)
-                self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0].left-len(player[2])*2.5,player[0].top-20))
+                pygame.draw.rect(self.screen,player[1],pygame.Rect(player[0][0],player[0][1],20,20))
+                pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(player[0][0],player[0][1],20,20),1)
+                self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]-20))
 
         for button in state.buttons:
             if button.visible:
