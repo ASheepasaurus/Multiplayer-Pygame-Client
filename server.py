@@ -17,15 +17,33 @@ class State:
         self.connection_no = 1
         self.player_data = {}
         self.player_locations = []
+        self.pickled_data = None
 
 state = State()
 
-def remove_user(sock, players):
+def remove_user(sock,players):
     state.player_data.pop(sock)
     players.pop(sock)
     sock.shutdown(2)
     sock.close()
 
+def main_thread():
+    while True:
+        state.player_locations = list(state.player_data.values())
+        for player_no in range(len(state.player_locations)):
+            state.player_locations[player_no][0] = (state.player_locations[player_no][0][0]+state.player_locations[player_no][2][0], state.player_locations[player_no][0][1]+state.player_locations[player_no][2][1])
+            state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3]]            
+
+        try:
+            for clientsocket in state.connections:
+                try:
+                    state.pickled_data = pickle.dumps(state.player_locations,protocol = pickle.HIGHEST_PROTOCOL)+"^&^".encode()
+                    clientsocket.send(state.pickled_data)
+                except ConnectionResetError or OSError:
+                    pass
+        except RuntimeError:
+            pass
+            
 def handle_client(clientsocket, addr, players):
     while True:
         try:
@@ -40,18 +58,15 @@ def handle_client(clientsocket, addr, players):
                 state.player_data[clientsocket] = [state.player_data[clientsocket][0],player[0],player[1],player[2]]
             except KeyError:
                 state.player_data[clientsocket] = [(590,290),player[0],player[1],player[2]]
-            state.player_locations = list(state.player_data.values())
-
+                
         except ConnectionResetError:
-            remove_user(clientsocket,players)
+            remove_user(clientsocket,state.connections)
             break
 
-        for player_no in range(len(state.player_locations)):
-            state.player_locations[player_no][0] = (state.player_locations[player_no][0][0]+state.player_locations[player_no][2][0], state.player_locations[player_no][0][1]+state.player_locations[player_no][2][1])
-            state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3]]
+##        clientsocket.send(pickle.dumps(state.player_locations))
 
-        clientsocket.send(pickle.dumps(state.player_locations))
-    
+thread.start_new_thread(main_thread, ())
+
 while True:
     try:
         connection, address = server.accept()

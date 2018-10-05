@@ -69,7 +69,7 @@ class State:
         self.inputting_ip = False
         self.selecting_colour = False
         self.ip = ""
-        self.default_ip = "172.16.192.170"
+        self.default_ip = "192.168.1.73"
         self.colour = (0,0,0)
         self.slider_selected = -1
         self.total_colour_rect = pygame.Rect(640,150,20,20)
@@ -176,9 +176,13 @@ def print_data(client):
         while True:
             data = client.recv(4096)
             try:
-                state.players = pickle.loads(data)
+                if len(data.split("^&^".encode())) == 2:
+                    state.players = pickle.loads(data.split("^&^".encode())[0])
+                else:
+                    state.players = pickle.loads(data.split("^&^".encode())[1])
             except pickle.UnpicklingError:
-                print("Unpickling Error")
+                print("Error due to tabbing out")
+            
         
 
 def input_getter():
@@ -210,10 +214,14 @@ def input_getter():
                    state.player_name = state.player_name[:-1]
 ## Detects if the player enters a character
                 elif event.key >= 97 and event.key <=122:
-                    state.player_name = state.player_name + pygame.key.name(event.key)
+                    if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
+                        state.player_name = state.player_name + pygame.key.name(event.key).upper()
+                    else:
+                        state.player_name = state.player_name + pygame.key.name(event.key)
 ##Checks if the player enters a space
                 elif event.key == 32:
                     state.player_name = state.player_name + " "
+                    
             if state.inputting_ip:
                 if event.key == 8 and len(state.ip) != 0:
                     state.ip = state.ip[:-1]
@@ -223,30 +231,30 @@ def input_getter():
                 
             if not state.main_menu:
                 if event.key == pygame.K_d:
-                    state.velocity_x += 1
+                    state.velocity_x += 0.05
 
                 if event.key == pygame.K_a:
-                    state.velocity_x -= 1
+                    state.velocity_x -= 0.05
 
                 if event.key == pygame.K_s:
-                    state.velocity_y += 1
+                    state.velocity_y += 0.05
 
                 if event.key == pygame.K_w:
-                    state.velocity_y -= 1
+                    state.velocity_y -= 0.05
 
         elif event.type == pygame.KEYUP:
             if not state.main_menu:
                 if event.key == pygame.K_d:
-                    state.velocity_x -= 1
+                    state.velocity_x -= 0.05
 
                 if event.key == pygame.K_a:
-                    state.velocity_x += 1
+                    state.velocity_x += 0.05
 
                 if event.key == pygame.K_s:
-                    state.velocity_y -= 1
+                    state.velocity_y -= 0.05
 
                 if event.key == pygame.K_w:
-                    state.velocity_y += 1
+                    state.velocity_y += 0.05
 
     state.player[1] = (state.velocity_x,state.velocity_y)
 
@@ -254,7 +262,7 @@ def input_getter():
         state.sliders[state.slider_selected].on_hold()
         
     if not state.main_menu:
-        state.client.send(pickle.dumps(state.player))            
+        state.client.send(pickle.dumps(state.player,protocol = pickle.HIGHEST_PROTOCOL))            
 
 while True:
     renderer.render()
