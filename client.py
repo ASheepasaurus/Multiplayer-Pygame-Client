@@ -147,7 +147,10 @@ class Renderer:
             for player in state.players:
                 pygame.draw.rect(self.screen,player[1],pygame.Rect(player[0][0],player[0][1],20,20))
                 pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(player[0][0],player[0][1],20,20),1)
-                self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]-20))
+                if player[0][1] < 10:
+                    self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]+20))
+                else:
+                    self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]-20))
 
         for button in state.buttons:
             if button.visible:

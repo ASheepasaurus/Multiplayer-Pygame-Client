@@ -18,6 +18,7 @@ class State:
         self.player_locations = []
         self.pickled_data = None
         self.no_players = 0
+        self.connection_no = 1
 
 state = State()
 
@@ -32,8 +33,20 @@ def main_thread():
     while True:
         state.player_locations = list(state.player_data.values())
         for player_no in range(len(state.player_locations)):
-            state.player_locations[player_no][0] = (state.player_locations[player_no][0][0]+state.player_locations[player_no][2][0], state.player_locations[player_no][0][1]+state.player_locations[player_no][2][1])
-            state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3]]            
+
+                state.player_locations[player_no][0] = (state.player_locations[player_no][0][0]+state.player_locations[player_no][2][0], state.player_locations[player_no][0][1]+state.player_locations[player_no][2][1])
+                if state.player_locations[player_no][0][0] <0:
+                    state.player_locations[player_no][0] = (0,state.player_locations[player_no][0][1])
+
+                elif state.player_locations[player_no][0][0] > 1180:
+                     state.player_locations[player_no][0] = (1180,state.player_locations[player_no][0][1])
+
+                if state.player_locations[player_no][0][1] < 0:
+                    state.player_locations[player_no][0] = (state.player_locations[player_no][0][0],0)
+
+                elif state.player_locations[player_no][0][1] > 580:
+                    state.player_locations[player_no][0] = (state.player_locations[player_no][0][0],580)
+                state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3]]            
 
         try:
             for clientsocket in state.connections:
@@ -78,6 +91,7 @@ while True:
             try:
                 thread.start_new_thread(handle_client, (connection, address, state.connections))
                 state.no_players+=1
+                state.connection_no+=1
             except:
                 pass
 
