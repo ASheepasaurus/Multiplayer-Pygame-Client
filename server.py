@@ -14,14 +14,15 @@ server.listen(2)
 class State:
     def __init__(self):
         self.connections = {}
-        self.connection_no = 1
         self.player_data = {}
         self.player_locations = []
         self.pickled_data = None
+        self.no_players = 0
 
 state = State()
 
 def remove_user(sock,players):
+    state.no_players -= 1
     state.player_data.pop(sock)
     players.pop(sock)
     sock.shutdown(2)
@@ -39,9 +40,9 @@ def main_thread():
                 try:
                     state.pickled_data = pickle.dumps(state.player_locations,protocol = pickle.HIGHEST_PROTOCOL)+"^&^".encode()
                     clientsocket.send(state.pickled_data)
-                except ConnectionResetError or OSError:
+                except ConnectionResetError or OSError or ConnectionAbortedError:
                     pass
-        except RuntimeError:
+        except RuntimeError or OSError:
             pass
             
 def handle_client(clientsocket, addr, players):
@@ -68,18 +69,19 @@ def handle_client(clientsocket, addr, players):
 thread.start_new_thread(main_thread, ())
 
 while True:
-    try:
-        connection, address = server.accept()
-        print("Connection from", address)
-        state.connections[connection] = state.connections,state.connection_no
-##        connection.send(("Connected "+str(state.connections[connection][1])).encode())
+    if state.no_players < 8:
         try:
-            thread.start_new_thread(handle_client, (connection, address, state.connections))
-            state.connection_no+=1
-        except:
-            pass
+            connection, address = server.accept()
+            print("Connection from", address)
+            state.connections[connection] = state.connections,state.connection_no
+    ##        connection.send(("Connected "+str(state.connections[connection][1])).encode())
+            try:
+                thread.start_new_thread(handle_client, (connection, address, state.connections))
+                state.no_players+=1
+            except:
+                pass
 
-    except KeyboardInterrupt:
-        server.close()
+        except KeyboardInterrupt:
+            server.close()
         
 server.close()

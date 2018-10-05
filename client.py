@@ -73,6 +73,11 @@ class State:
         self.colour = (0,0,0)
         self.slider_selected = -1
         self.total_colour_rect = pygame.Rect(640,150,20,20)
+        self.message = ""
+        self.typing_bar = ""
+        self.typing = False
+        self.player_message = ""
+        self.message_timer = 0
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -149,18 +154,23 @@ class Renderer:
                 button.render()
 
         if state.inputting_name:
-            self.screen.blit(self.font.render("Name: " + state.player_name,False,(0,0,0)),(560,200))
+            self.screen.blit(self.font.render("Name: " + state.player_name + "|",False,(0,0,0)),(560,200))
 
-        if state.inputting_ip:
+        elif state.inputting_ip:
             self.screen.blit(self.font.render("IP: " + state.ip,False,(0,0,0)),(560,200))
 
-        if state.selecting_colour:
+        elif state.selecting_colour:
             self.screen.blit(self.font.render("Colour: ",False,(0,0,0)),(590,150))
             pygame.draw.rect(self.screen,state.colour,state.total_colour_rect)
             pygame.draw.rect(self.screen,(0,0,0),state.total_colour_rect,1)
             for slider in state.sliders:
                 pygame.draw.line(self.screen, slider.colour, (slider.start,slider.rect.center[1]), (slider.finish,slider.rect.center[1]))
                 pygame.draw.rect(self.screen,slider.colour,slider.rect)
+                
+        elif state.typing:
+            pygame.draw.rect(self.screen,(255,255,255),pygame.Rect(0,550,1200,50))
+            pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(0,550,1200,50),1)
+            self.screen.blit(self.font.render(state.player_name + ": " + state.message,False,(0,0,0)),(0,550))
 
 
 renderer = Renderer()
@@ -182,6 +192,9 @@ def print_data(client):
                     state.players = pickle.loads(data.split("^&^".encode())[1])
             except pickle.UnpicklingError:
                 print("Error due to tabbing out")
+
+            if state.message_timer != 0:
+                state.message_timer -= 1
             
         
 
@@ -198,12 +211,14 @@ def input_getter():
                 if state.main_menu and button.main_menu and button.visible:
                     if button.rect.collidepoint(pygame.mouse.get_pos()):
                         button.command()
-                        
+
+##Checks if a slider is being clicked on if on the right stage and sets the current slider selected to the one being clicked on            
             if state.selecting_colour:
                 for slider in state.sliders:
                     if slider.rect.collidepoint(pygame.mouse.get_pos()):
                         state.slider_selected = state.sliders.index(slider)
-                
+
+##When the player stops holding down the mouse the slider selected is unselected               
         elif event.type == pygame.MOUSEBUTTONUP:
             state.slider_selected = -1
         
@@ -230,39 +245,71 @@ def input_getter():
                     state.ip = state.ip + pygame.key.name(event.key)
                 
             if not state.main_menu:
-                if event.key == pygame.K_d:
-                    state.velocity_x += 0.05
+##              Checks if the player presses enter, and sets the message or resets velocity, also makes the user begin typing  
+                if event.key == 13:
+                    if state.typing:
+                        state.player_message = ": " + state.message
+                        state.message = ""
+                        state.message_timer = 100000
+                    else:
+                        state.velocity_x = 0
+                        state.velocity_y = 0
+                    state.typing = not state.typing
+                    
+                elif state.typing:
+                    if event.key == 8 and len(state.message) != 0:
+                        state.message = state.message[:-1]
+                        
+                    elif event.key >= 97 and event.key <=122 and len(state.message) <= 50:
+                        if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
+                            state.message += pygame.key.name(event.key).upper()
+                        else:
+                            state.message += pygame.key.name(event.key)
 
-                if event.key == pygame.K_a:
-                    state.velocity_x -= 0.05
+                    elif event.key == 32 and len(state.message) <= 50:
+                        state.message = state.message + " "
+                            
+                    
+                else:
+                    if event.key == pygame.K_d:
+                        state.velocity_x += 0.05
 
-                if event.key == pygame.K_s:
-                    state.velocity_y += 0.05
+                    if event.key == pygame.K_a:
+                        state.velocity_x -= 0.05
 
-                if event.key == pygame.K_w:
-                    state.velocity_y -= 0.05
+                    if event.key == pygame.K_s:
+                        state.velocity_y += 0.05
+
+                    if event.key == pygame.K_w:
+                        state.velocity_y -= 0.05
 
         elif event.type == pygame.KEYUP:
             if not state.main_menu:
-                if event.key == pygame.K_d:
-                    state.velocity_x -= 0.05
+                if not state.typing:
+                    if event.key == pygame.K_d and state.velocity_x > 0:
+                        state.velocity_x -= 0.05
 
-                if event.key == pygame.K_a:
-                    state.velocity_x += 0.05
+                    if event.key == pygame.K_a and state.velocity_x < 0:
+                        state.velocity_x += 0.05
 
-                if event.key == pygame.K_s:
-                    state.velocity_y -= 0.05
+                    if event.key == pygame.K_s and state.velocity_y > 0:
+                        state.velocity_y -= 0.05
 
-                if event.key == pygame.K_w:
-                    state.velocity_y += 0.05
+                    if event.key == pygame.K_w and state.velocity_y < 0:
+                        state.velocity_y += 0.05
 
     state.player[1] = (state.velocity_x,state.velocity_y)
+    state.player[2] = state.player_name + state.player_message
 
     if state.slider_selected != -1:
         state.sliders[state.slider_selected].on_hold()
-        
+
+##  Sends the player data to the server
     if not state.main_menu:
-        state.client.send(pickle.dumps(state.player,protocol = pickle.HIGHEST_PROTOCOL))            
+        state.client.send(pickle.dumps(state.player,protocol = pickle.HIGHEST_PROTOCOL))
+
+    if state.message_timer == 0:
+        state.player_message = ""
 
 while True:
     renderer.render()
