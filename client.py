@@ -7,6 +7,34 @@ import pickle
 pygame.init()
 pygame.font.init()
 
+class Slider:
+    def __init__(self,r,cp):
+        self.rect = r
+        self.start= self.rect.center[0]
+        self.finish = self.start+254
+        self.colour_position = cp
+        self.colour = (0,0,0)
+
+    def on_hold(self):
+        if pygame.mouse.get_pos()[0] > self.start and pygame.mouse.get_pos()[0] <= self.finish:
+            self.rect.center = (pygame.mouse.get_pos()[0],self.rect.center[1])
+
+        elif pygame.mouse.get_pos()[0] > self.finish:
+            self.rect.center = (self.finish,self.rect.center[1])
+
+        else:
+            self.rect.center = (self.start,self.rect.center[1])
+
+        if self.colour_position == 0:
+            self.colour = (self.rect.center[0]-497,0,0)
+
+        elif self.colour_position == 1:
+            self.colour = (0,self.rect.center[0]-497,0)
+
+        elif self.colour_position == 2:
+            self.colour = (0,0,self.rect.center[0]-497)
+
+        state.colour = (state.sliders[0].rect.center[0]-497,state.sliders[1].rect.center[0]-497,state.sliders[2].rect.center[0]-497)
 
 class Button:
     def __init__(self,m,r,c,t,co,v):
@@ -31,6 +59,7 @@ class State:
         self.player = [(),(),""]
         self.players = []
         self.buttons = []
+        self.sliders = []
         self.velocity_x = 0
         self.velocity_y = 0
         self.connecting_stage = 0
@@ -41,6 +70,9 @@ class State:
         self.selecting_colour = False
         self.ip = ""
         self.default_ip = "192.168.1.73"
+        self.colour = (0,0,0)
+        self.slider_selected = -1
+        self.total_colour_rect = pygame.Rect(640,150,20,20)
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -48,17 +80,23 @@ class State:
             if button.main_menu:
                 button.visible = not button.visible
         state.inputting_name = True
+        self.player = [(255,0,0),(0,0),self.player_name]
 
     def next_connection_step(self):
         self.connecting_stage += 1
         if self.connecting_stage == 1:
-            state.inputting_name = False
-            state.inputting_ip = True
-            self.player = [(255,255,0),(0,0),self.player_name]
+            self.inputting_name = False
+            self.inputting_ip = True
+            
                     
         if self.connecting_stage == 2:
-            state.inputting_ip = False
-            state.main_menu = False
+            self.inputting_ip = False
+            self.selecting_colour = True
+
+        if self.connecting_stage == 3:
+            self.selecting_colour = False
+            self.main_menu = False
+            self.player = [self.colour,(0,0),self.player_name]
             for button in self.buttons:
                 if button.main_menu:
                     button.visible = False
@@ -72,6 +110,13 @@ class State:
         self.next_button = Button(True,pygame.Rect(590,270,60,20),(0,100,255),"Next",self.next_connection_step,False)
         self.buttons.append(self.next_button)
         self.buttons.append(self.connect_button)
+
+        self.red_slider = Slider(pygame.Rect(488,180,20,20),0)
+        self.green_slider = Slider(pygame.Rect(488,210,20,20),1)
+        self.blue_slider = Slider(pygame.Rect(488,240,20,20),2)
+        self.sliders.append(self.red_slider)
+        self.sliders.append(self.green_slider)
+        self.sliders.append(self.blue_slider)
 
 ## Connects to the server
     def connect_to_server(self):
@@ -96,6 +141,7 @@ class Renderer:
         if not state.main_menu:
             for player in state.players:
                 pygame.draw.rect(self.screen,player[1],player[0])
+                pygame.draw.rect(self.screen,(0,0,0),player[0],1)
                 self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0].left-len(player[2])*2.5,player[0].top-20))
 
         for button in state.buttons:
@@ -107,6 +153,14 @@ class Renderer:
 
         if state.inputting_ip:
             self.screen.blit(self.font.render("IP: " + state.ip,False,(0,0,0)),(560,200))
+
+        if state.selecting_colour:
+            self.screen.blit(self.font.render("Colour: ",False,(0,0,0)),(590,150))
+            pygame.draw.rect(self.screen,state.colour,state.total_colour_rect)
+            pygame.draw.rect(self.screen,(0,0,0),state.total_colour_rect,1)
+            for slider in state.sliders:
+                pygame.draw.line(self.screen, slider.colour, (slider.start,slider.rect.center[1]), (slider.finish,slider.rect.center[1]))
+                pygame.draw.rect(self.screen,slider.colour,slider.rect)
 
 
 renderer = Renderer()
@@ -140,10 +194,16 @@ def input_getter():
                 if state.main_menu and button.main_menu and button.visible:
                     if button.rect.collidepoint(pygame.mouse.get_pos()):
                         button.command()
+                        
+            if state.selecting_colour:
+                for slider in state.sliders:
+                    if slider.rect.collidepoint(pygame.mouse.get_pos()):
+                        state.slider_selected = state.sliders.index(slider)
                 
-                
+        elif event.type == pygame.MOUSEBUTTONUP:
+            state.slider_selected = -1
         
-        if event.type == pygame.KEYDOWN:
+        elif event.type == pygame.KEYDOWN:
             if state.inputting_name:
 ##  Detects if backspace is pressed,if it is it deletes the last character    
                 if event.key == 8 and len(state.player_name) != 0:
@@ -174,7 +234,7 @@ def input_getter():
                 if event.key == pygame.K_w:
                     state.velocity_y -= 1
 
-        if event.type == pygame.KEYUP:
+        elif event.type == pygame.KEYUP:
             if not state.main_menu:
                 if event.key == pygame.K_d:
                     state.velocity_x -= 1
@@ -190,6 +250,9 @@ def input_getter():
 
     state.player[1] = (state.velocity_x,state.velocity_y)
 
+    if state.slider_selected != -1:
+        state.sliders[state.slider_selected].on_hold()
+        
     if not state.main_menu:
         state.client.send(pickle.dumps(state.player))            
 
