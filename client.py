@@ -60,8 +60,6 @@ class State:
         self.players = []
         self.buttons = []
         self.sliders = []
-        self.velocity_x = 0
-        self.velocity_y = 0
         self.connecting_stage = 0
         self.main_menu = True
         self.player_name = ""
@@ -79,6 +77,7 @@ class State:
         self.player_message = ""
         self.message_timer = 0
         self.id_it = 0
+        self.inputs = [0,0]
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -102,7 +101,7 @@ class State:
         if self.connecting_stage == 3:
             self.selecting_colour = False
             self.main_menu = False
-            self.player = [self.colour,(0,0),self.player_name]
+            self.player = [self.colour,self.inputs,self.player_name]
             for button in self.buttons:
                 if button.main_menu:
                     button.visible = False
@@ -202,6 +201,7 @@ def print_data(client):
 
             if len(state.players) != 0:
                 state.id_it = state.players[0][3]
+                
             if state.message_timer != 0:
                 state.message_timer -= 1
             
@@ -237,7 +237,7 @@ def input_getter():
                 if event.key == 8 and len(state.player_name) != 0:
                    state.player_name = state.player_name[:-1]
 ## Detects if the player enters a character
-                elif event.key >= 97 and event.key <=122:
+                elif event.key >= 97 and event.key <= 122:
                     if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
                         state.player_name = state.player_name + pygame.key.name(event.key).upper()
                     else:
@@ -278,36 +278,35 @@ def input_getter():
                     
                 else:
                     if event.key == pygame.K_d:
-                        state.velocity_x += 0.05
+                        state.inputs[0] += 1
 
                     if event.key == pygame.K_a:
-                        state.velocity_x -= 0.05
+                        state.inputs[0] -= 1
 
                     if event.key == pygame.K_s:
-                        state.velocity_y += 0.05
+                        state.inputs[1] += 1
 
                     if event.key == pygame.K_w:
-                        state.velocity_y -= 0.05
+                        state.inputs[1] -= 1
 
         elif event.type == pygame.KEYUP:
             if not state.main_menu:
                 if event.key == pygame.K_d:
-                    state.velocity_x -= 0.05
+                    state.inputs[0] -= 1
 
                 if event.key == pygame.K_a:
-                    state.velocity_x += 0.05
+                    state.inputs[0] += 1
 
                 if event.key == pygame.K_s:
-                    state.velocity_y -= 0.05
+                    state.inputs[1] -= 1
 
                 if event.key == pygame.K_w:
-                    state.velocity_y += 0.05
+                    state.inputs[1] += 1
 
         if 1 not in pygame.key.get_pressed():
-            state.velocity_y = 0
-            state.velocity_x = 0
-
-    state.player[1] = (state.velocity_x,state.velocity_y)
+            state.inputs = [0,0]
+            
+    state.player = [state.colour,state.inputs,state.player_name]
     state.player[2] = state.player_name + state.player_message
 
     if state.slider_selected != -1:
