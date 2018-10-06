@@ -78,6 +78,7 @@ class State:
         self.typing = False
         self.player_message = ""
         self.message_timer = 0
+        self.id_it = 0
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -152,6 +153,9 @@ class Renderer:
                 else:
                     self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]-20))
 
+                if player[4] == state.id_it:
+                    self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0],player[0][1]))
+
         for button in state.buttons:
             if button.visible:
                 button.render()
@@ -196,6 +200,8 @@ def print_data(client):
             except pickle.UnpicklingError:
                 print("Error due to tabbing out")
 
+            if len(state.players) != 0:
+                state.id_it = state.players[0][3]
             if state.message_timer != 0:
                 state.message_timer -= 1
             

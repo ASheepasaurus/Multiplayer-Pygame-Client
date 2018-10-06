@@ -4,6 +4,7 @@ import _thread as thread
 import hashlib
 import atexit
 import pickle
+import random
 
 pygame.init()
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,16 +16,23 @@ class State:
     def __init__(self):
         self.connections = {}
         self.player_data = {}
+        self.connection_to_id = {}
+        self.id_to_connection = {}
+        self.available_connections = [1,2,3,4,5,6,7,8]
+        self.used_connections = []
         self.player_locations = []
         self.pickled_data = None
-        self.no_players = 0
-        self.connection_no = 1
+        self.id = -1
+        self.id_it = 1
 
 state = State()
 
 def remove_user(sock,players):
-    state.no_players -= 1
-    state.player_data.pop(sock)
+    state.available_connections.append(state.connection_to_id[sock])
+    state.used_connections.remove(state.connection_to_id[sock])
+    state.player_data.pop(state.connection_to_id[sock])
+    state.id_to_connection.pop(state.connection_to_id[sock])
+    state.connection_to_id.pop(sock)
     players.pop(sock)
     sock.shutdown(2)
     sock.close()
@@ -46,19 +54,41 @@ def main_thread():
 
                 elif state.player_locations[player_no][0][1] > 580:
                     state.player_locations[player_no][0] = (state.player_locations[player_no][0][0],580)
-                state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3]]            
+                state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3],state.player_locations[player_no][4],state.player_locations[player_no][6]]
 
+        if len(state.used_connections) != 0:
+##          When no player is it, picks a random one to be it          
+            if state.id_it in state.available_connections:
+                state.id_it = state.used_connections[random.randint(0,len(state.used_connections)-1)]
+                
+##      Detects when tug player collides with another, if the other player hasn't been tug recently, it passes it on
+        for player in state.player_locations:
+            if player[3] == player[4]:
+                for player_2 in state.player_locations:
+                    if player_2[3] != player_2[4]:
+                        if pygame.Rect(player[0][0],player[0][1],20,20).colliderect(pygame.Rect(player_2[0][0],player_2[0][1],20,20)) and state.player_data[player_2[4]][5] == 0:                            
+                            state.id_it = player_2[4]
+                            state.player_data[player[4]][5] = 5000
+                        break
+                break
+##      Decreases the time until a player can be tug again
+        for player in state.player_data:
+            if state.player_data[player][5] != 0:
+                state.player_data[player][5] -= 1
+                
         try:
             for clientsocket in state.connections:
                 try:
                     state.pickled_data = pickle.dumps(state.player_locations,protocol = pickle.HIGHEST_PROTOCOL)+"^&^".encode()
                     clientsocket.send(state.pickled_data)
+                    
                 except ConnectionResetError or OSError or ConnectionAbortedError:
                     pass
+                
         except RuntimeError or OSError:
             pass
-            
-def handle_client(clientsocket, addr, players):
+
+def handle_client(clientsocket,_id, addr, players):
     while True:
         try:
             data = clientsocket.recv(4096)
@@ -68,30 +98,31 @@ def handle_client(clientsocket, addr, players):
             except pickle.UnpicklingError:
                 print("unpickling error")
 
-            try:
-                state.player_data[clientsocket] = [state.player_data[clientsocket][0],player[0],player[1],player[2]]
+            try:                                                       
+                state.player_data[_id] = [state.player_data[_id][0],player[0],player[1],player[2],state.id_it,state.player_data[_id][5],_id]
             except KeyError:
-                state.player_data[clientsocket] = [(590,290),player[0],player[1],player[2]]
+                state.player_data[_id] = [(590,290),player[0],player[1],player[2],state.id_it,0,_id]
                 
         except ConnectionResetError:
             remove_user(clientsocket,state.connections)
             break
 
-##        clientsocket.send(pickle.dumps(state.player_locations))
-
 thread.start_new_thread(main_thread, ())
 
 while True:
-    if state.no_players < 8:
+    if len(state.available_connections) != 0:
         try:
             connection, address = server.accept()
             print("Connection from", address)
-            state.connections[connection] = state.connections,state.connection_no
-    ##        connection.send(("Connected "+str(state.connections[connection][1])).encode())
+            state.connections[connection] = state.connections
+
             try:
-                thread.start_new_thread(handle_client, (connection, address, state.connections))
-                state.no_players+=1
-                state.connection_no+=1
+                state.id = state.available_connections[random.randint(0,len(state.available_connections))]
+                thread.start_new_thread(handle_client, (connection, state.id, address, state.connections))
+                state.available_connections.remove(state.id)
+                state.used_connections.append(state.id)
+                state.connection_to_id[connection] = state.id
+                state.id_to_connection[state.id] = connection
             except:
                 pass
 
