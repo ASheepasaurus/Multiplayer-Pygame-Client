@@ -50,10 +50,13 @@ class Button:
         if not self.hovering:
             pygame.draw.rect(renderer.screen,self.colour,self.rect)
             pygame.draw.rect(renderer.screen,(0,0,0),self.rect,1)
-            renderer.screen.blit(renderer.font.render(self.text,False,(0,0,0)),(self.rect))
-        else:
-            print("hovering")
+            renderer.screen.blit(renderer.font.render(self.text,False,(255-self.colour[0],255-self.colour[1],255-self.colour[2])),(self.rect.center[0]-len(self.text)*4,self.rect.top,self.rect.width,self.rect.height))
 
+        else:
+            pygame.draw.rect(renderer.screen,(255-self.colour[0],255-self.colour[1],255-self.colour[2]),self.rect)
+            pygame.draw.rect(renderer.screen,(0,0,0),self.rect,1)
+            renderer.screen.blit(renderer.font.render(self.text,False,self.colour),(self.rect.center[0]-len(self.text)*4,self.rect.top,self.rect.width,self.rect.height)
+)
 class State:
     def __init__(self):
         self.player = [(),(),""]
@@ -147,13 +150,15 @@ class Renderer:
             for player in state.players:
                 pygame.draw.rect(self.screen,player[1],pygame.Rect(player[0][0],player[0][1],20,20))
                 pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(player[0][0],player[0][1],20,20),1)
-                if player[0][1] < 10:
+                if player[0][1] < 20:
                     self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]+20))
+                    if player[4] == state.id_it:
+                        self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0]+2,player[0][1]+33))
+                        
                 else:
                     self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]-20))
-
-                if player[4] == state.id_it:
-                    self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0],player[0][1]))
+                    if player[4] == state.id_it:
+                        self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0]+2,player[0][1]-33))
 
         for button in state.buttons:
             if button.visible:
@@ -236,12 +241,17 @@ def input_getter():
 ##  Detects if backspace is pressed,if it is it deletes the last character    
                 if event.key == 8 and len(state.player_name) != 0:
                    state.player_name = state.player_name[:-1]
+##  Checks if the player enters a number
+                if event.key == 46 or event.key >= 48 and event.key <= 57:
+                    state.player_name = state.player_name + pygame.key.name(event.key)
+                   
 ## Detects if the player enters a character
                 elif event.key >= 97 and event.key <= 122:
                     if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
                         state.player_name = state.player_name + pygame.key.name(event.key).upper()
                     else:
                         state.player_name = state.player_name + pygame.key.name(event.key)
+                        
 ##Checks if the player enters a space
                 elif event.key == 32:
                     state.player_name = state.player_name + " "
@@ -265,6 +275,9 @@ def input_getter():
                 elif state.typing:
                     if event.key == 8 and len(state.message) != 0:
                         state.message = state.message[:-1]
+
+                    if event.key == 46 or event.key >= 48 and event.key <= 57:
+                        state.message += pygame.key.name(event.key)
                         
                     elif event.key >= 97 and event.key <=122 and len(state.message) <= 50:
                         if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
@@ -318,6 +331,15 @@ def input_getter():
 
     if state.message_timer == 0:
         state.player_message = ""
+
+    if state.main_menu:
+        for button in state.buttons:
+            if button.visible:
+                if button.rect.collidepoint(pygame.mouse.get_pos()):    
+                    button.hovering = True
+
+                else:
+                    button.hovering = False
 
 while True:
     renderer.render()
