@@ -81,6 +81,7 @@ class State:
         self.message_timer = 0
         self.id_it = 0
         self.inputs = [0,0]
+        self.player_id = -1
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -137,6 +138,10 @@ class State:
         else:
             self.client.connect((state.default_ip, 1782))
             thread.start_new_thread(print_data,(self.client,))
+
+        self.player_id = self.client.recv(2).decode()
+        print("Connected")
+        
         
 class Renderer:
     def __init__(self):

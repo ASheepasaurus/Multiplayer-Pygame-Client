@@ -130,6 +130,8 @@ while True:
                 state.used_connections.append(state.id)
                 state.connection_to_id[connection] = state.id
                 state.id_to_connection[state.id] = connection
+
+                connection.send(state.id.encode())
             except:
                 pass
 
