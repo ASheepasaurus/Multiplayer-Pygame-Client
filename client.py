@@ -260,9 +260,6 @@ def input_getter():
                         state.player_message = ": " + state.message
                         state.message = ""
                         state.message_timer = 100000
-                    else:
-                        state.velocity_x = 0
-                        state.velocity_y = 0
                     state.typing = not state.typing
                     
                 elif state.typing:
@@ -294,18 +291,21 @@ def input_getter():
 
         elif event.type == pygame.KEYUP:
             if not state.main_menu:
-                if not state.typing:
-                    if event.key == pygame.K_d and state.velocity_x > 0:
-                        state.velocity_x -= 0.05
+                if event.key == pygame.K_d:
+                    state.velocity_x -= 0.05
 
-                    if event.key == pygame.K_a and state.velocity_x < 0:
-                        state.velocity_x += 0.05
+                if event.key == pygame.K_a:
+                    state.velocity_x += 0.05
 
-                    if event.key == pygame.K_s and state.velocity_y > 0:
-                        state.velocity_y -= 0.05
+                if event.key == pygame.K_s:
+                    state.velocity_y -= 0.05
 
-                    if event.key == pygame.K_w and state.velocity_y < 0:
-                        state.velocity_y += 0.05
+                if event.key == pygame.K_w:
+                    state.velocity_y += 0.05
+
+        if 1 not in pygame.key.get_pressed():
+            state.velocity_y = 0
+            state.velocity_x = 0
 
     state.player[1] = (state.velocity_x,state.velocity_y)
     state.player[2] = state.player_name + state.player_message
