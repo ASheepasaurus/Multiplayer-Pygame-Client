@@ -87,6 +87,7 @@ class State:
         self.gamemode = "dark"
         self.screen_colour = (255,255,255)
         self.player_location = (0,0)
+        self.temp_player = None
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -144,7 +145,12 @@ class State:
             self.client.connect((state.default_ip, 1782))
             thread.start_new_thread(print_data,(self.client,))
 
-        self.player_id = int(self.client.recv(1).decode())        
+        try:
+            self.player_id = int(self.client.recv(1).decode())
+        except:
+            print("Error on recieving ID: Please reconnect")
+            pygame.quit()
+            
         print("Connected")
         
         
@@ -232,14 +238,18 @@ atexit.register(exit_handler)
 
 def print_data(client):
         while True:
-            data = client.recv(4096)
+            data = client.recv(1024)
             try:
-                if len(data.split("^&^".encode())) == 2:
-                    state.players = pickle.loads(data.split("^&^".encode())[0])
-                else:
-                    state.players = pickle.loads(data.split("^&^".encode())[1])
+                for players in data.split("^&^".encode()):
+                    if "£".encode() in players and "*".encode() in players:
+                        state.temp_player = players.strip("*".encode()).strip("£".encode()).strip("^".encode()).strip("&".encode())
+                        if "£".encode() not in state.temp_player and  "*".encode() not in state.temp_player and  "^".encode() not in state.temp_player and  "&".encode() not in state.temp_player:
+                            state.players = pickle.loads(state.temp_player)
+                            break
+                        
             except pickle.UnpicklingError:
-                print("Error due to tabbing out")
+                
+                pass
 
             if len(state.players) != 0:
                 state.id_it = state.players[0][3]

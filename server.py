@@ -87,7 +87,7 @@ def main_thread():
         try:
             for clientsocket in state.connections:
                 try:
-                    state.pickled_data = pickle.dumps(state.player_locations,protocol = pickle.HIGHEST_PROTOCOL)+"^&^".encode()
+                    state.pickled_data = "^&^*".encode() + pickle.dumps(state.player_locations,protocol = pickle.HIGHEST_PROTOCOL) + "£".encode()
                     clientsocket.send(state.pickled_data)
                     
                 except ConnectionResetError or OSError or ConnectionAbortedError:
