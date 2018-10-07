@@ -77,7 +77,7 @@ def main_thread():
                         if pygame.Rect(player[0][0],player[0][1],20,20).colliderect(pygame.Rect(player_2[0][0],player_2[0][1],20,20)) and state.player_data[player_2[4]][5] == 0:                            
                             state.id_it = player_2[4]
                             state.player_data[player[4]][5] = 5000
-                        break
+                            break
                 break
             
 ##      Decreases the time until a player can be tug again
