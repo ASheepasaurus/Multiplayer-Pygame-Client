@@ -391,6 +391,7 @@ def input_getter():
                     button.hovering = False
 
     if len(state.players) >0:
+        state.gamemode = state.players[0][-1]
         if state.players[0][3] == state.player_id:
             state.player_it = True
             if state.gamemode == "dark":

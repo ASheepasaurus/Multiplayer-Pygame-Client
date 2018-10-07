@@ -6,10 +6,12 @@ import atexit
 import pickle
 import random
 
+##ip = socket.gethostbyname(socket.gethostname())
+ip = '86.177.115.125'
 pygame.init()
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print("Hosting server at ", socket.gethostbyname(socket.gethostname()))
-server.bind((socket.gethostbyname(socket.gethostname()), 1782))
+server.bind(("", 1782))
 server.listen(2)
 
 class State:
@@ -24,7 +26,7 @@ class State:
         self.pickled_data = None
         self.id = -1
         self.id_it = 1
-        self.game_speed = 0.05
+        self.game_speed = 0.3
         self.gamemode = "dark"
 
 state = State()
@@ -61,8 +63,7 @@ def main_thread():
             elif state.player_locations[player_no][0][1] > 580:
                 state.player_locations[player_no][0] = (state.player_locations[player_no][0][0],580)
                 
-            state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3],state.player_locations[player_no][4],state.player_locations[player_no][6]]
-
+            state.player_locations[player_no] = [state.player_locations[player_no][0],state.player_locations[player_no][1],state.player_locations[player_no][3],state.player_locations[player_no][4],state.player_locations[player_no][6],state.gamemode]
         if len(state.used_connections) != 0:
 ##          When no player is it, picks a random one to be it          
             if state.id_it in state.available_connections:
