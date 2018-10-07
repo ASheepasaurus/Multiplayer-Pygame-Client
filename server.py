@@ -30,6 +30,7 @@ class State:
 state = State()
 
 def remove_user(sock,players):
+    print(sock.getpeername()[0], "has disconnected")
     state.available_connections.append(state.connection_to_id[sock])
     state.used_connections.remove(state.connection_to_id[sock])
     state.player_data.pop(state.connection_to_id[sock])
