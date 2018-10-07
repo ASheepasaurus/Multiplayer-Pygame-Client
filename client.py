@@ -147,6 +147,7 @@ class State:
 
         try:
             self.player_id = int(self.client.recv(1).decode())
+            
         except:
             print("Error on recieving ID: Please reconnect")
             pygame.quit()
@@ -240,15 +241,15 @@ def print_data(client):
         while True:
             data = client.recv(1024)
             try:
-                for players in data.split("^&^".encode()):
-                    if "£".encode() in players and "*".encode() in players:
-                        state.temp_player = players.strip("*".encode()).strip("£".encode()).strip("^".encode()).strip("&".encode())
-                        if "£".encode() not in state.temp_player and  "*".encode() not in state.temp_player and  "^".encode() not in state.temp_player and  "&".encode() not in state.temp_player:
+                for players in data.split("^?^".encode()):
+                    if "£".encode() in players and "!".encode() in players:
+                        state.temp_player = players.strip("!".encode()).strip("£".encode()).strip("^".encode()).strip("?".encode())
+                        if "£".encode() not in state.temp_player and  "!".encode() not in state.temp_player and  "^".encode() not in state.temp_player and  "?".encode() not in state.temp_player:
                             state.players = pickle.loads(state.temp_player)
                             break
                         
             except pickle.UnpicklingError:
-                
+                print("Error")
                 pass
 
             if len(state.players) != 0:
