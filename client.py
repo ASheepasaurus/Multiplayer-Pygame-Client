@@ -3,6 +3,7 @@ import socket
 import _thread as thread
 import atexit
 import pickle
+import math
 
 pygame.init()
 pygame.font.init()
@@ -82,6 +83,10 @@ class State:
         self.id_it = 0
         self.inputs = [0,0]
         self.player_id = -1
+        self.player_it = False
+        self.gamemode = "dark"
+        self.screen_colour = (255,255,255)
+        self.player_location = (0,0)
 
 ##  Starts the connection process  
     def begin_connect(self):
@@ -139,7 +144,7 @@ class State:
             self.client.connect((state.default_ip, 1782))
             thread.start_new_thread(print_data,(self.client,))
 
-        self.player_id = self.client.recv(2).decode()
+        self.player_id = int(self.client.recv(1).decode())        
         print("Connected")
         
         
@@ -149,21 +154,47 @@ class Renderer:
         self.font = pygame.font.SysFont("Comic Sans MS", 15)
 
     def render(self):
-        self.screen.fill((255,255,255))
+        self.screen.fill((state.screen_colour))
 
         if not state.main_menu:
             for player in state.players:
-                pygame.draw.rect(self.screen,player[1],pygame.Rect(player[0][0],player[0][1],20,20))
-                pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(player[0][0],player[0][1],20,20),1)
-                if player[0][1] < 20:
-                    self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]+20))
-                    if player[4] == state.id_it:
-                        self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0]+2,player[0][1]+33))
-                        
-                else:
-                    self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]-20))
-                    if player[4] == state.id_it:
-                        self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0]+2,player[0][1]-33))
+                if player[4] == state.player_id:
+                    state.player_location = player[0]
+                    break
+
+            if state.gamemode == "dark":
+                if not state.player_it:
+                    pygame.draw.circle(self.screen,(255,255,255),(int(state.player_location[0]+10),int(state.player_location[1]+10)),50)
+            
+            for player in state.players:
+                if state.gamemode == "dark":
+                    if math.sqrt((player[0][0]-state.player_location[0])**2+(player[0][1]-state.player_location[1])**2) <= 50:
+                        pygame.draw.rect(self.screen,player[1],pygame.Rect(player[0][0],player[0][1],20,20))
+                        pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(player[0][0],player[0][1],20,20),1)
+                        if player[0][1] < 20:
+                            self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]+20))
+                            if player[4] == state.id_it:
+                                self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0]+2,player[0][1]+33))
+                                
+                        else:
+                            self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]-20))
+                            if player[4] == state.id_it:
+                                self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0]+2,player[0][1]-33))
+                    
+                if state.gamemode == "light" or state.player_it:
+                    pygame.draw.rect(self.screen,player[1],pygame.Rect(player[0][0],player[0][1],20,20))
+                    pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(player[0][0],player[0][1],20,20),1)
+                    if player[0][1] < 20:
+                        self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]+20))
+                        if player[4] == state.id_it:
+                            self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0]+2,player[0][1]+33))
+                            
+                    else:
+                        self.screen.blit(self.font.render(player[2],False,(0,0,0)),(player[0][0]-len(player[2])*2.5,player[0][1]-20))
+                        if player[4] == state.id_it:
+                            self.screen.blit(self.font.render("It",False,(255,0,0)),(player[0][0]+2,player[0][1]-33))
+
+        
 
         for button in state.buttons:
             if button.visible:
@@ -173,7 +204,8 @@ class Renderer:
             self.screen.blit(self.font.render("Name: " + state.player_name + "|",False,(0,0,0)),(560,200))
 
         elif state.inputting_ip:
-            self.screen.blit(self.font.render("IP: " + state.ip,False,(0,0,0)),(560,200))
+            self.screen.blit(self.font.render("IP: " + state.ip + "|",False,(0,0,0)),(560,200))
+            self.screen.blit(self.font.render("Default IP: " + state.default_ip ,False,(0,0,0)),(560,220))
 
         elif state.selecting_colour:
             self.screen.blit(self.font.render("Colour: ",False,(0,0,0)),(590,150))
@@ -243,25 +275,26 @@ def input_getter():
         
         elif event.type == pygame.KEYDOWN:
             if state.inputting_name:
+                if len(state.player_name) < 16:
 ##  Detects if backspace is pressed,if it is it deletes the last character    
-                if event.key == 8 and len(state.player_name) != 0:
-                   state.player_name = state.player_name[:-1]
+                    if event.key == 8 and len(state.player_name) != 0:
+                       state.player_name = state.player_name[:-1]
 ##  Checks if the player enters a number
-                if event.key == 46 or event.key >= 48 and event.key <= 57:
-                    state.player_name = state.player_name + pygame.key.name(event.key)
+                    if event.key == 46 or event.key >= 48 and event.key <= 57:
+                        state.player_name = state.player_name + pygame.key.name(event.key)
                    
 ## Detects if the player enters a character
-                elif event.key >= 97 and event.key <= 122:
-                    if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
-                        state.player_name = state.player_name + pygame.key.name(event.key).upper()
-                    else:
-                        state.player_name = state.player_name + pygame.key.name(event.key)
+                    elif event.key >= 97 and event.key <= 122:
+                        if pygame.key.get_mods() & pygame.KMOD_LSHIFT:
+                            state.player_name = state.player_name + pygame.key.name(event.key).upper()
+                        else:
+                            state.player_name = state.player_name + pygame.key.name(event.key)
                         
 ##Checks if the player enters a space
-                elif event.key == 32:
-                    state.player_name = state.player_name + " "
+                    elif event.key == 32:
+                        state.player_name = state.player_name + " "
                     
-            if state.inputting_ip:
+            elif state.inputting_ip:
                 if event.key == 8 and len(state.ip) != 0:
                     state.ip = state.ip[:-1]
 
@@ -346,6 +379,16 @@ def input_getter():
                 else:
                     button.hovering = False
 
+    if len(state.players) >0:
+        if state.players[0][3] == state.player_id:
+            state.player_it = True
+            if state.gamemode == "dark":
+                state.screen_colour = (255,255,255)
+            
+        else:
+            state.player_it = False
+            if state.gamemode == "dark":
+                state.screen_colour = (0,0,0)
 while True:
     renderer.render()
     input_getter()

@@ -25,6 +25,7 @@ class State:
         self.id = -1
         self.id_it = 1
         self.game_speed = 0.05
+        self.gamemode = "dark"
 
 state = State()
 
@@ -130,11 +131,13 @@ while True:
                 state.used_connections.append(state.id)
                 state.connection_to_id[connection] = state.id
                 state.id_to_connection[state.id] = connection
-
-                connection.send(state.id.encode())
+                
+               
             except:
-                pass
-
+                print("error")
+                
+            connection.send(str(state.id).encode())
+                
         except KeyboardInterrupt:
             server.close()
         
