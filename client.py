@@ -171,11 +171,11 @@ class Renderer:
 
             if state.gamemode == "dark":
                 if not state.player_it:
-                    pygame.draw.circle(self.screen,(255,255,255),(int(state.player_location[0]+10),int(state.player_location[1]+10)),50)
+                    pygame.draw.circle(self.screen,(255,255,255),(int(state.player_location[0]+10),int(state.player_location[1]+10)),100)
             
             for player in state.players:
                 if state.gamemode == "dark":
-                    if math.sqrt((player[0][0]-state.player_location[0])**2+(player[0][1]-state.player_location[1])**2) <= 50:
+                    if math.sqrt((player[0][0]-state.player_location[0])**2+(player[0][1]-state.player_location[1])**2) <= 100:
                         pygame.draw.rect(self.screen,player[1],pygame.Rect(player[0][0],player[0][1],20,20))
                         pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(player[0][0],player[0][1],20,20),1)
                         if player[0][1] < 20:

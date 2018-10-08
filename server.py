@@ -11,7 +11,7 @@ ip = '86.177.115.125'
 pygame.init()
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print("Hosting server at ", socket.gethostbyname(socket.gethostname()))
-server.bind(("", 1782))
+server.bind((socket.gethostbyname(socket.gethostname()), 1782))
 server.listen(2)
 
 class State:
